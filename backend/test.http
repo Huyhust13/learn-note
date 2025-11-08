@@ -1,0 +1,20 @@
+###
+POST http://localhost:60000/add_note
+content-type: application/json
+
+{
+    "title": "test note",
+    "content": "day la note thu hai",
+    "tags": "test"
+}
+
+###
+GET http://localhost:60000/all_notes
+
+###
+POST http://localhost:60000/polish
+content-type: application/json
+
+{
+  "content": "Trời âm u thường sẽ mưa."
+}
