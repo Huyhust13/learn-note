@@ -43,7 +43,7 @@ router.get('/random_note', (req, res) => {
 
 // Get all note
 router.get('/all_notes', (req, res) => {
-  db.all(`SELECT id, title, content, source FROM notes`, (err, rows) => {
+  db.all(`SELECT id, title, content, tags, source FROM notes`, (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!rows || rows.length === 0) return res.status(404).json({ error: "No notes found" });
     res.json(rows);
@@ -57,5 +57,28 @@ router.get("/titles", (req, res) => {
     res.json(rows);
   });
 });
+
+router.get("/sources", (req, res) => {
+  db.all(`SELECT id, source FROM notes ORDER BY date_added DESC`, (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!rows || rows.length === 0) return res.status(404).json({ error: "No notes found" });
+    res.json(rows);
+  });
+})
+
+router.get("/tags", (req, res) => {
+  db.all(`SELECT id, tags FROM notes ORDER BY date_added DESC`, (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!rows || rows.length === 0) return res.status(404).json({ error: "No notes found" });
+    let tags = [];
+    rows.forEach(row => {
+      if (row.tags !== '') {
+        tags = tags.concat(row.tags.split(","));
+      }
+    });
+    tags = tags.filter((tag, index) => tags.indexOf(tag) === index);
+    res.json(tags);
+  });
+})
 
 module.exports = router;

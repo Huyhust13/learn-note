@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { addNote, polishNote, fetchTitles, fetchAllNotes, fetchRandomNote } from "../api";
+import { addNote, polishNote, fetchTitles, fetchAllNotes, fetchRandomNote, fetchTags, fetchSources } from "../api";
 
 const NoteForm = ({onNoteAdded}) => {
   const [title, setTitle] = useState("");
@@ -10,7 +10,15 @@ const NoteForm = ({onNoteAdded}) => {
   const [loading, setLoading] = useState(false);
   const [titles, setTitles] = useState([]);
   const [filteredTitles, setFilteredTitles] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showTitleSuggestions, setShowTitleSuggestions] = useState(false);
+  const [sources, setSources] = useState([]);
+  const [showSourceSuggestions, setShowSourceSuggestions] = useState(false);
+  const [filterSources, setFilterSources] = useState([]);
+  const [tag, setTag] = useState("");
+  const [allTags, setAllTags] = useState([]);
+  const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  const [filterTags, setFilterTags] = useState([]);
+
   const [notes, setNotes] = useState([]);
   const [randomNote, setRandomNote] = useState(null);
 
@@ -24,7 +32,28 @@ const NoteForm = ({onNoteAdded}) => {
       }
     };
 
+    const loadSources = async () => {
+      try {
+        const data = await fetchSources();
+        setSources(data.map((n) => n.source));
+      } catch (err) {
+        console.error("Error fetching sources", err);
+      }
+    }
+
+    const loadTags = async () => {
+      try {
+        const data = await fetchTags();
+        setAllTags(data);
+        console.log("tags: ", allTags);
+      } catch (err) {
+        console.error("Error fetching tags", err);
+      }
+    }
+
     loadTitles();
+    loadSources();
+    loadTags();
   }, []);
 
   const handleTitleChange = (e) => {
@@ -33,7 +62,7 @@ const NoteForm = ({onNoteAdded}) => {
 
     if (value.trim() === "") {
       setFilteredTitles([]);
-      setShowSuggestions(false);
+      setShowTitleSuggestions(false);
       return;
     }
 
@@ -41,13 +70,61 @@ const NoteForm = ({onNoteAdded}) => {
       title.toLowerCase().includes(value.toLowerCase())
     );
     setFilteredTitles(matches.slice(0, 5)); // show top 5 matches
-    setShowSuggestions(matches.length > 0);
+    setShowTitleSuggestions(matches.length > 0);
+  }
+
+  const handleSourceChange = (e) => {
+    const value = e.target.value;
+    setSource(value);
+
+    if (value.trim() === "") {
+      setFilterSources([]);
+      setShowSourceSuggestions(false);
+      return;
+    }
+
+    const matchs = sources.filter((source) =>
+      source.toLowerCase().includes(value.toLowerCase())
+    );
+    setFilterSources(matchs.slice(0, 5)); // show top 5 matches
+    setShowSourceSuggestions(matchs.length > 0);
+  }
+
+  const handleTagChange = (e) => {
+    const value = e.target.value;
+    setTags(value);
+
+    if (value.trim() === "") {
+      setFilterTags([]);
+      setShowTagSuggestions(false);
+      return;
+    }
+    const latestTag = value.split(",").pop().trim();
+    if (allTags.length === 0) return;
+    const matchs = allTags.filter((tag) =>
+      tag?.toLowerCase().includes(latestTag.toLowerCase())
+    );
+
+    setFilterTags(matchs.slice(0, 5)); // show top 5 matches
+    setShowTagSuggestions(matchs.length > 0);
   }
 
   const handleSelectTitle = (title) => {
     setTitle(title);
     setFilteredTitles([]);
-    setShowSuggestions(false);
+    setShowTitleSuggestions(false);
+  }
+
+  const handleSelectSource = (source) => {
+    setSource(source);
+    setFilterSources([]);
+    setShowSourceSuggestions(false);
+  }
+
+  const handleSelectTag = (tag) => {
+    setTag(tag);
+    setFilterTags([]);
+    setShowTagSuggestions(false);
   }
 
   const handlePolish = async () => {
@@ -115,10 +192,10 @@ const NoteForm = ({onNoteAdded}) => {
             onChange={handleTitleChange}
             required
             style={{ width: "100%", padding: "8px" }}
-            onFocus={() => title && setShowSuggestions(true)}
-            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            onFocus={() => title && setShowTitleSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowTitleSuggestions(false), 200)}
           />
-          {showSuggestions && filteredTitles.length > 0 && (
+          {showTitleSuggestions && filteredTitles.length > 0 && (
             <ul
               style={{
                 listStyle: "none",
@@ -156,20 +233,88 @@ const NoteForm = ({onNoteAdded}) => {
           required
           style={{ width: "100%", padding: "8px" }}
         />
+
         <input
           type="text"
           placeholder="Source"
           value={source}
-          onChange={(e) => setSource(e.target.value)}
+          onChange={handleSourceChange}
           style={{ width: "100%", padding: "8px" }}
+          onFocus={() => source && setShowSourceSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowSourceSuggestions(false, 200))}
         />
+        {showSourceSuggestions && filterSources.length > 0 && (
+          <ul
+            style={{
+              listStyle: "none",
+              margin: 0,
+              padding: "4px",
+              border: "1px solid #ccc",
+              position: "absolute",
+              width: "100%",
+              background: "#fff",
+              zIndex: 10,
+              maxHeight: "150px",
+              overflowY: "auto"
+            }}
+          >
+            {filterSources.map((s, i) => (
+              <li
+                key={i}
+                onClick={() => handleSelectSource(s)}
+                // onKeyDown={() => handleSelectSource(t)}
+                style={{
+                  padding: "6px 8px",
+                  cursor: "pointer"
+                }}
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                {s}
+              </li>
+            ))}
+          </ul>
+        )}
+
         <input
           type="text"
           placeholder="Tags (comma separated)"
           value={tags}
-          onChange={(e) => setTags(e.target.value)}
+          onChange={handleTagChange}
           style={{ width: "100%", padding: "8px" }}
+          onFocus={() => tag && setShowTagSuggestions(true)}
+          onBlur={() => setTimeout(() => setShowTagSuggestions(false, 200))}
         />
+        {showTagSuggestions && filterTags.length > 0 && (
+          <ul
+            style={{
+              listStyle: "none",
+              margin: 0,
+              padding: "4px",
+              border: "1px solid #ccc",
+              position: "absolute",
+              width: "100%",
+              background: "#fff",
+              zIndex: 10,
+              maxHeight: "150px",
+              overflowY: "auto"
+            }}
+          >
+            {filterTags.map((t, i) => (
+              <li
+                key={i}
+                onClick={() => handleSelectTag(t)}
+                // onKeyDown={() => handleSelectSource(t)}
+                style={{
+                  padding: "6px 8px",
+                  cursor: "pointer"
+                }}
+                onMouseDown={(e) => e.preventDefault()}
+              >
+                {t}
+              </li>
+            ))}
+          </ul>
+        )}
 
         <div className="buttons" style={{display: "flex", gap: "10px", marginTop: "10px"}}>
           <button type="button" onClick={handlePolish} disabled={loading}>

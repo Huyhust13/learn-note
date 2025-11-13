@@ -24,7 +24,18 @@ export const fetchAllNotes = async () => {
   return res.data;
 };
 
+
 export const fetchTitles = async () => {
   const res = await axios.get(`${API_URL}/titles`);
+  return res.data;
+};
+
+export const fetchSources = async () => {
+  const res = await axios.get(`${API_URL}/sources`);
+  return res.data;
+};
+
+export const fetchTags = async () => {
+  const res = await axios.get(`${API_URL}/tags`);
   return res.data;
 };
